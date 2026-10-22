@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/node:7.10
+      - image: cimg/node:26.12
 
     working_directory: ~/repo
 
@@ -17,25 +17,29 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-      - run: npm install
+          - v2-dependencies-{{ checksum "aws/package-lock.json" }}
+      - run:
+          command: npm ci
+          working_directory: aws
 
 
       - save_cache:
           paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+            - aws/node_modules
+          key: v2-dependencies-{{ checksum "aws/package-lock.json" }}
         
       # run tests!
       # - run: npm test
 
       # run npm run build
-      - run: npm run build
+      - run:
+          command: npm run build
+          working_directory: aws
 
   deploy:
     docker:
       # specify the version you desire here
-      - image: circleci/node:7.10
+      - image: cimg/node:26.12
 
     working_directory: ~/repo
 
@@ -47,24 +51,29 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-      - run: npm install
+          - v2-dependencies-{{ checksum "aws/package-lock.json" }}
+      - run:
+          command: npm ci
+          working_directory: aws
       - save_cache:
           paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}        
-      - run: npm run build
+            - aws/node_modules
+          key: v2-dependencies-{{ checksum "aws/package-lock.json" }}        
+      - run:
+          command: npm run build
+          working_directory: aws
       
       
-      # install python and awscli
+      # install awscli
       - run:
           name: Install dependencies
           command: |
-            # sudo apt-get update
-            sudo apt-get install -y awscli
+            curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+            unzip -q /tmp/awscliv2.zip -d /tmp
+            sudo /tmp/aws/install
       - run:
           command: |
-            aws s3 sync public/ s3://craftbeer-loves.com --acl public-read
+            aws s3 sync aws/public/ s3://craftbeer-loves.com --acl public-read
 
 workflows:
   version: 2
